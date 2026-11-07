@@ -1,0 +1,12 @@
+# 换行：仓库内统一 LF，检出时由平台决定（Windows 上的 .cs / .java 用 CRLF 也无妨）
+* text=auto
+
+# 这些文件一旦被转成 CRLF 就会直接坏掉：bash 脚本 / gradlew 在 Git Bash、Linux、CI 上都要能跑
+*.sh text eol=lf
+gradlew text eol=lf
+
+# 二进制：不参与任何换行与文本合并
+*.jar binary
+*.dll binary
+*.png binary
+*.zip binary

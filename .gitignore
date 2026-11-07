@@ -1,0 +1,22 @@
+# ── 构建产物 ───────────────────────────────────────────────
+DynamicIsland-MC/build/
+DynamicIsland-MC/.gradle/
+DynamicIsland-MC/run/
+DynamicIsland-MC/.workbuddy-build.log
+DynamicIsland-MC/local-maven/
+NpsDynamicIsland/bin/
+NpsDynamicIsland/obj/
+NpsDynamicIsland/dist/
+NpsDynamicIsland/tests/SelfTest/bin/
+NpsDynamicIsland/tests/SelfTest/obj/
+
+# ── 本地工具与临时文件 ─────────────────────────────────────
+.workbuddy/
+NpsMinecraft.zip
+
+# ── 编辑器 / 系统 ──────────────────────────────────────────
+.vs/
+.idea/
+*.user
+Thumbs.db
+.DS_Store

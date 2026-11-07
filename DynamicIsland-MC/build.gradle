@@ -1,0 +1,57 @@
+plugins {
+    // 26.1 起 Loom 的插件 id 由 `fabric-loom` 改为 `net.fabricmc.fabric-loom`
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+    maven {
+        name = 'Fabric'
+        url = 'https://maven.fabricmc.net/'
+    }
+    maven {
+        name = 'AliyunCentral'
+        url = 'https://maven.aliyun.com/repository/public'
+    }
+    mavenCentral()
+}
+
+dependencies {
+    // 26.1 的 Minecraft 未混淆，故不声明 mappings
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+    // 按需引入 Fabric API 模块：开发期用到的只有生命周期事件、按键映射与 HUD 渲染三块。
+    // 玩家侧的完整 Fabric API 由 fabric.mod.json 的 depends 声明。
+    implementation "net.fabricmc.fabric-api:fabric-api-base:${project.fapi_api_base}"
+    implementation "net.fabricmc.fabric-api:fabric-lifecycle-events-v1:${project.fapi_lifecycle}"
+    implementation "net.fabricmc.fabric-api:fabric-key-mapping-api-v1:${project.fapi_keymapping}"
+    implementation "net.fabricmc.fabric-api:fabric-rendering-v1:${project.fapi_rendering}"
+}
+
+processResources {
+    inputs.property "version", project.version
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 25
+    it.options.encoding = "UTF-8"
+}

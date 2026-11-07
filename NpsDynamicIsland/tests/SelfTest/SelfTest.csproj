@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>NpsDynamicIsland.SelfTest</RootNamespace>
+    <AssemblyName>NpsDynamicIsland.SelfTest</AssemblyName>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <!-- 链接插件源码而不是引用 dll：验证的永远是当前工作区的代码，且同程序集内可直接访问 internal -->
+    <Compile Include="..\..\src\IslandSnapshot.cs" Link="IslandSnapshot.cs" />
+  </ItemGroup>
+
+</Project>

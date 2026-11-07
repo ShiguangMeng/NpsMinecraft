@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "dynamicisland",
+  "version": "${version}",
+  "name": "NPS · Minecraft",
+  "description": "把 Minecraft 的游戏状态镜像到 Windows 的 NotchPeninsula 灵动岛：挖掘进度、方块放置余量、当前手持物品与耐久。模组本身不在游戏内绘制任何界面。",
+  "authors": [
+    "拾光梦"
+  ],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.shiguangmeng.dynamicisland.DynamicIslandMod"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~26.1.2",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}

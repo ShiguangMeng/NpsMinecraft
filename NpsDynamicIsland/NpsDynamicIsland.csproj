@@ -1,0 +1,66 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- 必须与主程序 NotchPeninsula.csproj 完全一致，否则插件无法被加载 -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+
+    <!-- 插件是类库，产物为 dll；程序集名与文件名统一为 NpsMinecraft -->
+    <OutputType>Library</OutputType>
+    <AssemblyName>NpsMinecraft</AssemblyName>
+    <RootNamespace>NpsDynamicIsland</RootNamespace>
+
+    <!-- 版本号唯一真源：入口类的 Version 读 AssemblyInformationalVersion，不另写第二份 -->
+    <Version>1.1.1</Version>
+
+    <Authors>拾光梦</Authors>
+    <Company>拾光梦</Company>
+
+    <!-- 运行时不需要 pdb，便于单文件分发 -->
+    <DebugType>none</DebugType>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 引用主程序只为拿到 INotchPlugin / IPluginHost / IWidget / IDetailPage 等接口定义。
+         Private="false"：宿主 dll 绝不进插件包，运行时这些类型统一走主程序那一份。 -->
+    <ProjectReference Include="..\..\NPSPlugins\NotchPeninsula\NotchPeninsula.csproj" Private="false" />
+
+    <!-- 绘制接口需要 SkiaSharp 类型；ExcludeAssets="runtime" 保证不把 SkiaSharp.dll 打进插件包 -->
+    <PackageReference Include="SkiaSharp" Version="2.88.8" PrivateAssets="all" ExcludeAssets="runtime" />
+
+    <!-- tests 是独立的验证工程，不参与插件编译 -->
+    <Compile Remove="tests\**" />
+    <None Remove="tests\**" />
+    <Content Remove="tests\**" />
+    <EmbeddedResource Remove="tests\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 未连接 / 空手时显示的 Minecraft 图标（客户端资源包自带的 pack.png）。
+         内嵌进 dll 一起分发：宿主插件目录只需这一个文件，不依赖任何外部资源。 -->
+    <EmbeddedResource Include="assets\minecraft.png" LogicalName="NpsMinecraft.minecraft.png" />
+  </ItemGroup>
+
+  <!-- 打包：把编译产物复制成目录型分发包 dist/NpsDynamicIsland/ -->
+  <Target Name="PackPlugin" AfterTargets="Build">
+    <PropertyGroup>
+      <PluginDistDir>$(MSBuildThisFileDirectory)dist\NpsMinecraft\</PluginDistDir>
+    </PropertyGroup>
+    <MakeDir Directories="$(PluginDistDir)" />
+    <Copy SourceFiles="$(TargetDir)$(AssemblyName).dll" DestinationFolder="$(PluginDistDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)plugin.json" DestinationFolder="$(PluginDistDir)" SkipUnchangedFiles="true" />
+    <Message Importance="high" Text="[NpsDynamicIsland] 插件已打包到: $(PluginDistDir)" />
+  </Target>
+
+  <!-- 安装：把 dll 拷进宿主插件目录；宿主未安装时 Condition 不成立，整体静默跳过 -->
+  <Target Name="InstallToHostPlugins" AfterTargets="PackPlugin" Condition="Exists('D:\NotchPeninsula\plugins')">
+    <Copy SourceFiles="$(TargetDir)$(AssemblyName).dll"
+          DestinationFolder="D:\NotchPeninsula\plugins"
+          SkipUnchangedFiles="true" />
+    <Message Importance="high" Text="[NpsDynamicIsland] 已安装到宿主插件目录: D:\NotchPeninsula\plugins" />
+  </Target>
+
+</Project>

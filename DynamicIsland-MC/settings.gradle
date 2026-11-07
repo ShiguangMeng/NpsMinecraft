@@ -1,0 +1,26 @@
+pluginManagement {
+    repositories {
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        maven {
+            name = 'AliyunGradlePlugin'
+            url = 'https://maven.aliyun.com/repository/gradle-plugin'
+        }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+
+    // 插件标记（net.fabricmc.fabric-loom.gradle.plugin）是一个只含 POM 的空壳模块，
+    // 直接指到本体坐标可以少一次解析，也让离线时不必依赖那个空壳。
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id == 'net.fabricmc.fabric-loom') {
+                useModule("net.fabricmc:fabric-loom:${requested.version}")
+            }
+        }
+    }
+}
+
+rootProject.name = 'dynamic-island'
