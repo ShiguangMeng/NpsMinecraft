@@ -10,6 +10,9 @@ NpsDynamicIsland/dist/
 NpsDynamicIsland/tests/SelfTest/bin/
 NpsDynamicIsland/tests/SelfTest/obj/
 
+# 二进制只随 GitHub Release 分发，仓库里不放产物
+/dist/
+
 # ── 本地工具与临时文件 ─────────────────────────────────────
 .workbuddy/
 NpsMinecraft.zip

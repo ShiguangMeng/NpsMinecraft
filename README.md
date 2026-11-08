@@ -144,15 +144,21 @@ DI|PING
 
 ### 5.2 安装模组
 
-1. 把 `DynamicIsland-MC/build/libs/nps-minecraft-1.0.0.jar` 复制到游戏目录的 `mods/` 文件夹。
-2. 同时确认 `mods/` 中存在 Fabric API。
-3. 启动游戏。按键设置中会出现「NPS · Minecraft」分类，`G` 键用于把当前手持物品唤出到岛上。
+从 [Releases](https://github.com/ShiguangMeng/NpsMinecraft/releases) 下载 `nps-minecraft-<版本>.jar`，复制到游戏目录的 `mods/`。
+
+1. 同时确认 `mods/` 中存在 Fabric API。
+2. 启动游戏。按键设置中会出现「NPS · Minecraft」分类，`G` 键用于把当前手持物品唤出到岛上。
+
+> 自己构建的产物在 `DynamicIsland-MC/build/libs/`，与 Release 里的 jar 同源。
 
 ### 5.3 安装插件
 
-1. 把 `NpsDynamicIsland/dist/NpsMinecraft/` 整个文件夹复制到 `NotchPeninsula/plugins/`（或只复制其中的 `NpsMinecraft.dll`）。
-2. 在宿主「插件中心」确认插件已加载，显示为「NPS · Minecraft」。
-3. 在「设置 → 显示设置 → 显示内容」中勾选它，即可上岛。
+从 [Releases](https://github.com/ShiguangMeng/NpsMinecraft/releases) 下载 `NpsMinecraft-plugin-<版本>.zip`，解压到 `NotchPeninsula/plugins/`（包内是 `NpsMinecraft.dll` 与 `plugin.json`）。
+
+1. 在宿主「插件中心」确认插件已加载，显示为「NPS · Minecraft」。
+2. 在「设置 → 显示设置 → 显示内容」中勾选它，即可上岛。
+
+> 自己构建的产物在 `NpsDynamicIsland/dist/NpsMinecraft/`，整个文件夹即可直接拷进 `plugins/`。
 
 ### 5.4 配置
 
