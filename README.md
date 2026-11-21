@@ -4,10 +4,59 @@
 
 | 作品 | 目录 | 平台 | 技术栈 |
 | --- | --- | --- | --- |
-| **NPS · Minecraft（模组）** | `DynamicIsland-MC/` | Minecraft Java 26.1.2 | Fabric Loom 1.18.2 · Java 25 |
+| **NPS · Minecraft（模组）** | `mod/` | Minecraft Java 1.16.5 ~ 26.3 · Fabric / Forge / NeoForge | 离线编译矩阵 · Java 8 / 17 / 21 / 25 |
 | **NPS · Minecraft（插件）** | `NpsDynamicIsland/` | Windows · NotchPeninsula | C# · .NET 10 · SkiaSharp 2.88 |
 
 两者由同一条本地回环 UDP 链路驱动：**模组采集并推送，插件接收并呈现**。
+
+> `DynamicIsland-MC/` 是只支持 26.1.2 Fabric 的旧实现，已被 `mod/` 取代，仅作历史参考。
+
+---
+
+## 兼容范围与版本分支
+
+模组用一份共享核心覆盖 **13 个 Minecraft 版本 × 3 种加载器**（共 35 个制品）：
+
+| Minecraft | Fabric | Forge | NeoForge | 字节码 | 版本垫片 |
+| --- | --- | --- | --- | --- | --- |
+| 26.3 | ✓ | ✓ | ✓ | Java 25 | `Compat1211` |
+| 26.1.2 | ✓ | ✓ | ✓ | Java 25 | `Compat1211` |
+| 1.21.11 | ✓ | ✓ | ✓ | Java 21 | `Compat1211` |
+| 1.21.8 | ✓ | ✓ | ✓ | Java 21 | `Compat1215` |
+| 1.21.5 | ✓ | ✓ | ✓ | Java 21 | `Compat1215` |
+| 1.21.4 | ✓ | ✓ | ✓ | Java 21 | `Compat1214` |
+| 1.21.1 | ✓ | ✓ | ✓ | Java 21 | `Compat1214` |
+| 1.20.6 | ✓ | ✓ | ✓ | Java 21 | `Compat1206` |
+| 1.20.4 | ✓ | ✓ | ✓ | Java 17 | `Compat120` |
+| 1.20.1 | ✓ | ✓ | — | Java 17 | `Compat120` |
+| 1.19.2 | ✓ | ✓ | — | Java 17 | `Compat119` |
+| 1.18.2 | ✓ | ✓ | — | Java 17 | `Compat118` |
+| 1.16.5 | ✓ | ✓ | — | Java 8 | `Compat116` |
+
+**Quilt** 不单独出包：Quilt Loader 可直接加载 Fabric 制品，前提是 Quilt 端提供 Fabric API 兼容层（QFAPI）。
+
+运行时命名空间随加载器而异，构建期逐版本重映射并校验：
+
+| 加载器 | 运行时命名 | 处理 |
+| --- | --- | --- |
+| Fabric 1.16.5 ~ 1.21.11 | intermediary | mojmap → intermediary |
+| Fabric 26.1.2 / 26.3 | mojmap | 不重映射 |
+| Forge 1.16.5 | 旧 SRG（`func_` / `field_`） | mojmap → SRG |
+| Forge 1.18.2 ~ 1.20.4 | 新 SRG（`m_` / `f_`） | mojmap → SRG |
+| Forge 1.20.6+ / NeoForge 1.21+ | mojmap | 不重映射 |
+| NeoForge 1.20.4 | 新 SRG | mojmap → SRG |
+
+### 分支拓扑
+
+| 分支 | 内容 | 用途 |
+| --- | --- | --- |
+| `main` | 共享核心、全部垫片与平台层、完整构建矩阵、插件源码 | 唯一事实源，修共享代码落在这里 |
+| `mc/<版本>` | 只保留该版本的垫片、平台层、元数据，矩阵钉死单版本 | 该版本的独立源码与构建 |
+
+`mc/<版本>` 由 `mod/tools/branchify.ps1` 从 `main` 生成，不在分支上直接改共享代码；改完 `main` 重新生成即可。
+
+制品命名统一为 `nps-minecraft-<模组版本>-<MC 版本>-<加载器>.jar`。**Minecraft 版本必须排在加载器之前**：PCL2 等启动器会向 ModLauncher 传
+`-DignoreList=...,forge-,...`，任何文件名含 `forge-` 的 jar 都会被静默排除 —— 旧的 `nps-minecraft-1.1.0-forge-1.20.1.jar` 在 PCL2 上根本不会加载。
 
 ---
 
@@ -138,22 +187,26 @@ DI|PING
 
 | 端 | 要求 |
 | --- | --- |
-| Minecraft | Java 版 **26.1.2** + **Fabric Loader ≥ 0.19.3** |
-| 模组依赖 | **Fabric API**（26.1.2 对应版本，如 `0.155.3+26.1.2`） |
+| Minecraft | Java 版 **1.16.5 ~ 26.3**，加载器任选 Fabric / Forge / NeoForge（Quilt 用 Fabric 制品） |
+| Java | 1.16.5 用 8；1.18.2 ~ 1.20.4 用 17；1.20.6 ~ 1.21.11 用 21；26.x 用 25 |
+| 模组依赖 | 仅 Fabric 需要 **Fabric API**（与 MC 版本对应）；Forge / NeoForge 无额外前置 |
 | NotchPeninsula | 已安装并运行（插件目录 `plugins/` 与主程序同级） |
 
 ### 5.2 安装模组
 
-从 [Releases](https://github.com/ShiguangMeng/NpsMinecraft/releases) 下载 `nps-minecraft-<版本>.jar`，复制到游戏目录的 `mods/`。
+从 [Releases](https://github.com/ShiguangMeng/NpsMinecraft/releases) 下载与你的加载器和 MC 版本对应的 jar，例如 `nps-minecraft-1.1.0-1.20.1-forge.jar`，复制到游戏目录的 `mods/`。
 
-1. 同时确认 `mods/` 中存在 Fabric API。
-2. 启动游戏。按键设置中会出现「NPS · Minecraft」分类，`G` 键用于把当前手持物品唤出到岛上。
+1. Fabric 还需在 `mods/` 中放入同版本的 Fabric API。
+2. 启动游戏，日志里会出现一行 `[DynamicIsland] 客户端已接入，游戏状态将镜像到灵动岛`。
+3. 按键设置中会出现「NPS · Minecraft」分类，`G` 键用于把当前手持物品唤出到岛上。
 
-> 自己构建的产物在 `DynamicIsland-MC/build/libs/`，与 Release 里的 jar 同源。
+> 文件名里的 MC 版本排在加载器之前是有意的：PCL2 等启动器会把含 `forge-` 的文件名列入 ModLauncher 忽略列表。
+>
+> 自己构建的产物在 `dist/<加载器>/`，与 Release 里的 jar 同源。
 
 ### 5.3 安装插件
 
-从 [Releases](https://github.com/ShiguangMeng/NpsMinecraft/releases) 下载 `NpsMinecraft-plugin-<版本>.zip`，解压到 `NotchPeninsula/plugins/`（包内是 `NpsMinecraft.dll` 与 `plugin.json`）。
+从 [Releases](https://github.com/ShiguangMeng/NpsMinecraft/releases) 下载 `NpsMinecraft-plugin-<版本>.zip`，解压到 `NotchPeninsula/plugins/`（包内是 `NpsMinecraft.dll` 与 `plugin.json`）。插件与 MC 版本无关，35 个制品共用同一份。
 
 1. 在宿主「插件中心」确认插件已加载，显示为「NPS · Minecraft」。
 2. 在「设置 → 显示设置 → 显示内容」中勾选它，即可上岛。
@@ -191,34 +244,34 @@ DI|PING
 
 ### 6.1 模组
 
-需要 **JDK 25**（Fabric 26.1 要求）。
+需要 **JDK 25**（一份 javac 通过 `--release` 产出 8 / 17 / 21 / 25 四代字节码），以及 `.workbuddy/probe`
+下的各版本客户端 jar（已重映射到 mojmap）、映射文件、加载器与 Fabric API 构件。
 
-```bash
-cd DynamicIsland-MC
-./gradlew build          # 产物：build/libs/nps-minecraft-1.0.0.jar
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File mod\tools\build.ps1
+# 全部 35 个制品：dist\fabric\、dist\forge\、dist\neoforge\
+
+powershell ... -Loader forge -McVersion 1.20.1   # 只做一个组合
+powershell ... -VerifyOnly                       # 不重新编译，只复核现有制品
 ```
 
-工程自带 Gradle Wrapper，其分发地址已指向国内镜像（腾讯云），无需另装 Gradle。
-若本机已有 Gradle，也可直接 `gradle build`。
+每个组合依次执行：
 
-> **网络不可用时的离线编译**：`maven.fabricmc.net` 在国内经常只有几 KB/s 且会中途停住，
-> 而 Gradle 的下载不支持续传，一次停住整条构建就失败。本机只要装过一次 26.1.2 + Fabric，
-> 编译所需的一切就都在 `.minecraft` 里（客户端 jar、`fabric-loader`、Fabric API 各模块、全部第三方库），
-> 可以直接用它们当 classpath：
->
-> ```bash
-> JAVA_HOME=/path/to/jdk-25 ./tools/build-offline.sh
-> # 产物同上：build/libs/nps-minecraft-<版本>.jar
-> ```
->
-> 脚本默认按 `D:/Meng/Documents/PCL2/.minecraft` 找文件，可用 `MC_ROOT` / `MC_VERSION_DIR` 覆盖；
-> 它不做 remap 也不生成 sources jar —— 26.1 起 Minecraft 不再混淆，编译产物与开发环境一致。
+| 阶段 | 做什么 | 失败会怎样 |
+| --- | --- | --- |
+| compile | `javac --release <目标>`，classpath = 该版本客户端 jar + 加载器 + Fabric API | 语法/API 不匹配直接报错 |
+| remap | `RemapTool`（ASM）把 mojmap 成员改写成运行时命名（intermediary / 新老 SRG） | 出现 `unmapped` 计数即写日志 |
+| package | 打包 + 写入该版本的 `fabric.mod.json` / `mods.toml` / `neoforge.mods.toml` | 缺元数据直接失败 |
+| link | `LinkCheck` 把每个 Minecraft 成员引用拿到运行时命名空间解析 | 列出无法解析的引用 |
+| check | 入口类、唯一垫片、语言文件、字节码版本、命名空间残留 | 任一不满足即 FAIL |
 
-> **依赖策略**：`build.gradle` 只声明实际用到的 4 个 Fabric API 模块
-> （`fabric-api-base`、`fabric-lifecycle-events-v1`、`fabric-key-mapping-api-v1`、`fabric-rendering-v1`），
-> 而不是聚合包 `net.fabricmc.fabric-api:fabric-api`。聚合包会一次拉取四十余个子模块、
-> 其中数个数 MB，在慢速网络下极易超时；按需引入把首次构建的下载量降到十分之一左右。
-> 运行时所需的完整 Fabric API 由 `fabric.mod.json` 的 `depends` 声明，玩家自行安装。
+`mod/tools/matrix.ps1` 是版本、平台、命名空间与依赖路径的唯一事实源；`mod/tools/branchify.ps1`
+以它为输入生成 `mc/<版本>` 分支。
+
+> **为什么不用 Gradle**：`maven.fabricmc.net` 在国内实测 4 ~ 13 KB/s 且会中途停住，Gradle 下载不支持续传，
+> 一次停顿整条构建就失败；Forge / NeoForge 的 Gradle 插件还要再拉数百 MB。改用本地已有的客户端 jar 直接
+> `javac` 后，整套 35 个制品的构建完全离线，单次约 20 分钟。旧的 `DynamicIsland-MC/` 仍保留 Gradle 工程
+> 与 `tools/build-offline.sh`，仅对应 26.1.2 Fabric。
 
 ### 6.2 插件
 
@@ -260,28 +313,33 @@ dotnet build NpsDynamicIsland.csproj -c Release
 
 ---
 
-## 八、26.1.2 的 API 变更点（开发备忘）
+## 八、跨版本 API 变更点（开发备忘）
 
-从 1.21.x 移植到 26.1 时实际踩到的差异，逐条已在本工程中验证：
+13 个版本之间只有 7 处 API 真的变了，全部收敛在 `Compat` 接口，由 8 个垫片实现：
 
-| 项目 | 1.21.x | 26.1.2 |
+| 差异点 | 变化 | 垫片 |
 | --- | --- | --- |
-| 代码混淆 | Yarn / Mojang 映射二选一 | **不再混淆**，无映射表 |
-| Loom 插件 id | `fabric-loom` | `net.fabricmc.fabric-loom` |
-| 依赖声明 | `modImplementation` | `implementation` |
-| 打包任务 | `remapJar` | `jar` |
-| Java 版本 | 21 | **25** |
-| 资源标识符 | `ResourceLocation` | **`Identifier`**（仍在 `net.minecraft.resources`） |
-| GUI 绘制入口 | `DrawContext` | **`GuiGraphicsExtractor`**（`net.minecraft.client.gui`） |
-| 按键注册 | `KeyBindingHelper.registerKeyBinding` | **`KeyMappingHelper.registerKeyMapping`**（包 `...client.keymapping.v1`） |
-| 按键分类 | `String` 常量 | **`KeyMapping.Category`**，用 `Category.register(Identifier)` 注册 |
-| 能否收获方块 | `canHarvestBlock(state)` | **`hasCorrectToolForDrops(state)`** |
-| 物品比较 | `stack.is(item)` | `stack.getItem() == item`（`is` 已改收 `Predicate<Holder<Item>>`） |
-| 读资源包文件 | `ResourceManager.getResource(id)` | **`getResourceStack(id)`** 返回 `List<Resource>`，再 `Resource.open()` |
+| 取背包 | 1.16.5 只有 `player.inventory` 字段，1.17 起为 `getInventory()` | `Compat116` |
+| 当前快捷栏下标 | 1.21.5 起 `Inventory.selected` 变私有，改用 `getSelectedSlot()` | `Compat1215` |
+| 物品注册名类型 | 1.21.11 起 `ResourceLocation` 更名 `Identifier` | `Compat1211` |
+| 方块地图颜色 | 1.20.1 起返回值从 `MaterialColor` 改为 `MapColor` | `Compat120` |
+| 创造模式判定 | `hasInfiniteMaterials()` 仅 1.20.6 起存在 | `Compat1206` |
+| 读取纹理 | 资源包 API 从 `getResource` 变为 `getResourceStack` | 各垫片 |
+| 按键分类 | 1.21.11 起分类参数从 `String` 变为 `KeyMapping.Category` | `Compat1211` |
 
-> 另一条与构建相关的实际坑：**fabric-loader 的 jar 必须真的存在于本地缓存**。
-> 声明一个本地没有的版本（如 0.19.5 而缓存只有 0.19.3）时，Gradle 在离线校验阶段不会报缺失，
-> 直到编译才以「程序包 `net.fabricmc.api` 不存在」的形式暴露 —— 看起来像代码错误，实为依赖没下来。
+26.1 特有的变化（不再混淆、`Identifier`、`KeyMappingHelper`、`GuiGraphicsExtractor` 等）见
+`mod/compat/src/.../Compat1211.java`。
+
+### 两个只在真机上才暴露的坑
+
+| 现象 | 根因 | 处理 |
+| --- | --- | --- |
+| PCL2 上 Forge 版完全不加载，日志里连 mod 名都不出现 | PCL2 向 ModLauncher 传 `-DignoreList=...,forge-,...`，按**文件名包含**匹配，`nps-minecraft-1.1.0-forge-1.20.1.jar` 被静默排除 | 制品改名为 `<MC 版本>-<加载器>`：`nps-minecraft-1.1.0-1.20.1-forge.jar` |
+| Forge 版加载成功但岛上一直「未连接」 | 启动器同样传 `-Djava.net.preferIPv6Addresses=system`，`InetAddress.getLoopbackAddress()` 返回 `::1`，而插件只监听 `127.0.0.1` | 发送端显式使用 `InetAddress.getByName("127.0.0.1")` |
+
+---
+
+## 九、插件生命周期与资源清理
 
 ---
 
