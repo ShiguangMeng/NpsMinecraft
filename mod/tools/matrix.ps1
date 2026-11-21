@@ -19,10 +19,7 @@ $ErrorActionPreference = 'Stop'
 $script:ModVersion = '1.1.0'
 
 # Newest first; this order drives build order and the generated report.
-$script:McVersions = @(
-    '26.3', '26.1.2', '1.21.11', '1.21.8', '1.21.5', '1.21.4',
-    '1.21.1', '1.20.6', '1.20.4', '1.20.1', '1.19.2', '1.18.2', '1.16.5'
-)
+$script:McVersions = @('1.20.6')
 
 $script:VersionInfo = @{
     '26.3'    = @{ JavaRelease = '25'; JavaMin = '>=25'; Compat = 'Compat1211'; ClientJar = '.workbuddy\probe\ladder\26.3\client-26.3.jar'; Proguard = '' }
@@ -41,9 +38,9 @@ $script:VersionInfo = @{
 }
 
 # Which MC versions each loader can actually run.
-$script:FabricVersions = @('26.3', '26.1.2', '1.21.11', '1.21.8', '1.21.5', '1.21.4', '1.21.1', '1.20.6', '1.20.4', '1.20.1', '1.19.2', '1.18.2', '1.16.5')
-$script:ForgeVersions = @('26.3', '26.1.2', '1.21.11', '1.21.8', '1.21.5', '1.21.4', '1.21.1', '1.20.6', '1.20.4', '1.20.1', '1.19.2', '1.18.2', '1.16.5')
-$script:NeoForgeVersions = @('26.3', '26.1.2', '1.21.11', '1.21.8', '1.21.5', '1.21.4', '1.21.1', '1.20.6', '1.20.4')
+$script:FabricVersions = @('1.20.6')
+$script:ForgeVersions = @('1.20.6')
+$script:NeoForgeVersions = @('1.20.6')
 
 $script:FabricInfo = @{
     '26.3'    = @{ Platform = 'fabric-modern'; Namespace = 'mojmap'; Loader = '>=0.19.3'; LoaderJar = '0.19.3' }
