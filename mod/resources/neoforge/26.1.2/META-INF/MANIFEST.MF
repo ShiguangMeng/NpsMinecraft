@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Specification-Title: NPS Minecraft
+Specification-Vendor: shiguangmeng
+Specification-Version: 1
+Implementation-Title: NPS Minecraft
+Implementation-Version: 1.1.0
+Implementation-Vendor: shiguangmeng
+
