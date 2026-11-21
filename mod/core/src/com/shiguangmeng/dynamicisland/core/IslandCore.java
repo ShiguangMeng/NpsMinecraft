@@ -42,6 +42,7 @@ public final class IslandCore {
     public static void init(KeyMapping key) {
         announceKey = key;
         IslandBridge.init();
+        log.info("[DynamicIsland] 客户端已接入，游戏状态将镜像到灵动岛");
     }
 
     /** 客户端每 tick 调一次。 */

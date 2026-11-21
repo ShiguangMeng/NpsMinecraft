@@ -38,7 +38,9 @@ public final class IslandBridge {
         }
         try {
             DatagramSocket created = new DatagramSocket();
-            InetAddress loopback = InetAddress.getLoopbackAddress();
+            // 显式钉住 IPv4 回环：PCL2 之类启动器会给 JVM 传 -Djava.net.preferIPv6Addresses=system，
+            // 此时 InetAddress.getLoopbackAddress() 返回 ::1，而插件只监听 127.0.0.1，报文会全部丢失。
+            InetAddress loopback = InetAddress.getByName("127.0.0.1");
             socket = created;
             destination = new InetSocketAddress(loopback, Protocol.PORT);
             queue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
