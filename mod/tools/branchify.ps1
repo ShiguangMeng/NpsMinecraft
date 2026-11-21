@@ -76,14 +76,14 @@ function New-LoaderTable {
 $repo = $script:RepoRoot
 Push-Location $repo
 try {
-    $dirty = @(& git status --porcelain)
+    $dirty = @(& $git status --porcelain)
     if ($dirty.Count -gt 0) {
         throw 'working tree is not clean; commit or stash the pending changes before branching'
     }
 
     if (-not $Versions -or $Versions.Count -eq 0) { $Versions = $script:McVersions }
 
-    $baseCommit = (& git rev-parse --short $BaseBranch)
+    $baseCommit = (& $git rev-parse --short $BaseBranch)
     $stamp = (Get-Date).ToString('yyyy-MM-dd')
 
     foreach ($v in $Versions) {
@@ -102,12 +102,12 @@ try {
         $platforms = @($platforms | Select-Object -Unique)
 
         $branch = 'mc/' + $v
-        & git checkout -q -B $branch $BaseBranch
+        & $git checkout -q -B $branch $BaseBranch
         if ($LASTEXITCODE -ne 0) { throw ('checkout failed: ' + $branch) }
 
         # The plugin (C#) and the legacy Fabric-only project are version independent and
         # stay on the base branch; a version branch is the mod source for one Minecraft.
-        & git rm -r -q --ignore-unmatch 'NpsDynamicIsland' 'DynamicIsland-MC'
+        & $git rm -r -q --ignore-unmatch 'NpsDynamicIsland' 'DynamicIsland-MC'
         if ($LASTEXITCODE -ne 0) { throw 'failed to drop version-independent directories' }
 
         $compatDir = 'mod\compat\src\com\shiguangmeng\dynamicisland\compat'
@@ -159,17 +159,17 @@ try {
         $readme = $readme.Replace('{{GENERATED_AT}}', $stamp)
         [System.IO.File]::WriteAllText((Join-Path $repo 'README.md'), $readme, $utf8)
 
-        & git add -A
+        & $git add -A
         if ($LASTEXITCODE -ne 0) { throw 'git add failed' }
 
         if (-not $NoCommit) {
-            & git commit -q -m ('chore(branch): pin Minecraft ' + $v)
+            & $git commit -q -m ('chore(branch): pin Minecraft ' + $v)
             if ($LASTEXITCODE -ne 0) { throw ('commit failed: ' + $branch) }
         }
         Write-Host ('[branch] ' + $branch + ' <- ' + $BaseBranch + ' @ ' + $baseCommit + ' (' + ($platforms -join ', ') + ', ' + $compat + ')')
     }
 
-    & git checkout -q $BaseBranch
+    & $git checkout -q $BaseBranch
     if ($LASTEXITCODE -ne 0) { throw ('failed to return to ' + $BaseBranch) }
     Write-Host ('[branch] done: ' + $Versions.Count + ' branches')
 } finally {
