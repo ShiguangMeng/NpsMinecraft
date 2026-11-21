@@ -10,15 +10,33 @@
 param(
     [Parameter(Mandatory = $true)][string]$GameDir,
     [int]$WarmupSeconds = 90,
+    [string]$JavaHome = '',
     [switch]$KeepRunning
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+# Git Bash exports both HTTPS_PROXY and https_proxy. Windows treats them as one variable,
+# so the process environment ends up with duplicate keys and Start-Process refuses to run.
+# The client talks to 127.0.0.1 only, so dropping the proxy entries is safe here.
+foreach ($proxyName in @('http_proxy', 'https_proxy', 'all_proxy', 'no_proxy')) {
+    if (Test-Path ('Env:' + $proxyName)) {
+        Remove-Item ('Env:' + $proxyName) -ErrorAction SilentlyContinue
+    }
+}
+
 . (Join-Path $PSScriptRoot 'matrix.ps1')
 
+# The client must run on the JDK its Minecraft version targets (1.16.5 -> 8, 1.20.x -> 17,
+# 1.21+ -> 21). The harness classes are compiled by the matrix JDK and stay on it.
 $java = Get-MatrixJdkPath 'java.exe'
+if ($JavaHome) {
+    $candidate = Join-Path $JavaHome 'bin\java.exe'
+    if (-not (Test-Path $candidate)) { throw "java.exe not found under JavaHome: $JavaHome" }
+    $java = $candidate
+}
+$snifferJava = Get-MatrixJdkPath 'java.exe'
 $argFile = Join-Path $GameDir 'launch.args'
 if (-not (Test-Path $argFile)) { throw "argfile missing: $argFile" }
 
@@ -30,7 +48,7 @@ $sniffErr = Join-Path $GameDir 'sniff.err'
 Remove-Item $sniffOut, $sniffErr -ErrorAction SilentlyContinue
 
 $harnessOut = Join-Path $script:RepoRoot 'tools\runtime\out'
-$sniffer = Start-Process -FilePath $java `
+$sniffer = Start-Process -FilePath $snifferJava `
     -ArgumentList ('-cp "' + $harnessOut + '" UdpSniff 25585 ' + ($WarmupSeconds + 120)) `
     -RedirectStandardOutput $sniffOut -RedirectStandardError $sniffErr `
     -PassThru -WindowStyle Hidden
