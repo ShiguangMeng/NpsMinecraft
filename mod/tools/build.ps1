@@ -56,7 +56,10 @@ $script:Results = @()
 
 function Get-ArtifactName {
     param([string]$LoaderName, [string]$Version)
-    return "nps-minecraft-$($script:ModVersion)-$LoaderName-$Version.jar"
+    # Minecraft version before the loader: PCL2 and friends pass -DignoreList=...,forge-,...
+    # to ModLauncher, which matches any jar whose name contains "forge-". A name such as
+    # nps-minecraft-1.1.0-forge-1.20.1.jar is silently dropped on those launchers.
+    return "nps-minecraft-$($script:ModVersion)-$Version-$LoaderName.jar"
 }
 
 function Get-ClasspathFor {

@@ -60,15 +60,19 @@ function Set-PinnedList {
 function New-LoaderTable {
     param([string]$Version, [bool]$Fabric, [bool]$Forge, [bool]$NeoForge)
 
+    # Artifact name is <mod>-<mcVersion>-<loader>.jar: the Minecraft version comes first so
+    # the name never contains the "forge-" sequence that ModLauncher ignore lists match.
+    $base = 'nps-minecraft-' + $script:ModVersion + '-' + $Version
+
     $rows = @()
     if ($Fabric) {
-        $rows += '| Fabric | Loader ' + $script:FabricInfo[$Version].Loader + '，Fabric API `' + $script:FabricApi[$Version].KeyModule + '` | `nps-minecraft-' + $script:ModVersion + '-fabric-' + $Version + '.jar` |'
+        $rows += '| Fabric | Loader ' + $script:FabricInfo[$Version].Loader + '，Fabric API `' + $script:FabricApi[$Version].KeyModule + '` | `' + $base + '-fabric.jar` |'
     }
     if ($Forge) {
-        $rows += '| Forge | ' + $script:ForgeInfo[$Version].Univ + ' | `nps-minecraft-' + $script:ModVersion + '-forge-' + $Version + '.jar` |'
+        $rows += '| Forge | ' + $script:ForgeInfo[$Version].Univ + ' | `' + $base + '-forge.jar` |'
     }
     if ($NeoForge) {
-        $rows += '| NeoForge | ' + $script:NeoForgeInfo[$Version].Univ + ' | `nps-minecraft-' + $script:ModVersion + '-neoforge-' + $Version + '.jar` |'
+        $rows += '| NeoForge | ' + $script:NeoForgeInfo[$Version].Univ + ' | `' + $base + '-neoforge.jar` |'
     }
     return ($rows -join "`n")
 }

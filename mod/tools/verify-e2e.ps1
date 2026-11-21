@@ -17,7 +17,10 @@ param(
     [string]$ServerDir = 'C:\npsrt\server2612',
     [int]$ServerPort = 25565,
     [int]$ListenSeconds = 180,
-    [int]$ClientSeconds = 150
+    [int]$ClientSeconds = 150,
+    [int]$ServerTimeoutSeconds = 300,
+    [string]$JavaHome = '',
+    [switch]$QuickPlay
 )
 
 Set-StrictMode -Version Latest
@@ -25,22 +28,29 @@ $ErrorActionPreference = 'Stop'
 
 . (Join-Path $PSScriptRoot 'matrix.ps1')
 
+# Git Bash exports both HTTPS_PROXY and https_proxy; Windows treats them as one variable,
+# so the process environment carries duplicate keys and Start-Process refuses to launch.
+foreach ($proxyName in @('http_proxy', 'https_proxy', 'all_proxy', 'no_proxy')) {
+    if (Test-Path ('Env:' + $proxyName)) {
+        Remove-Item ('Env:' + $proxyName) -ErrorAction SilentlyContinue
+    }
+}
+
+# The client and the server must run on a JDK their Minecraft version supports
+# (1.20.x -> 17, 1.21+ -> 21). The sniffer stays on the matrix JDK that compiled it.
 $java = Get-MatrixJdkPath 'java.exe'
+if ($JavaHome) {
+    $candidate = Join-Path $JavaHome 'bin\java.exe'
+    if (-not (Test-Path $candidate)) { throw ('java.exe not found under JavaHome: ' + $JavaHome) }
+    $java = $candidate
+}
+$snifferJava = Get-MatrixJdkPath 'java.exe'
 $harnessOut = Join-Path $script:RepoRoot 'tools\runtime\out'
 
 New-Item -ItemType Directory -Force -Path $GameDir | Out-Null
 
-# --- 1) protocol listener -------------------------------------------------
-$sniffLog = Join-Path $GameDir 'sniff-e2e.log'
-$sniffErr = Join-Path $GameDir 'sniff-e2e.err'
-Remove-Item $sniffLog, $sniffErr -ErrorAction SilentlyContinue
-$sniffer = Start-Process -FilePath $java `
-    -ArgumentList ('-cp "' + $harnessOut + '" UdpSniff ' + 25585 + ' ' + $ListenSeconds) `
-    -RedirectStandardOutput $sniffLog -RedirectStandardError $sniffErr -PassThru -WindowStyle Hidden
-Write-Host ('[e2e] listener pid=' + $sniffer.Id + ' for ' + $ListenSeconds + 's')
-Start-Sleep -Milliseconds 1200
 
-# --- 2) dedicated server --------------------------------------------------
+# --- 1) dedicated server --------------------------------------------------
 $srvLog = Join-Path $GameDir 'server-e2e.log'
 $srvErr = Join-Path $GameDir 'server-e2e.err'
 Remove-Item $srvLog, $srvErr -ErrorAction SilentlyContinue
@@ -67,7 +77,7 @@ if ($portOpen) {
         -PassThru -WindowStyle Hidden
     Write-Host ('[e2e] server pid=' + $server.Id)
 
-    $deadline = (Get-Date).AddSeconds(180)
+    $deadline = (Get-Date).AddSeconds($ServerTimeoutSeconds)
     while ((Get-Date) -lt $deadline) {
         Start-Sleep -Seconds 3
         if ((Test-Path $srvLog) -and (Select-String -Path $srvLog -Pattern 'Done \(' -Quiet -ErrorAction SilentlyContinue)) {
@@ -78,11 +88,20 @@ if ($portOpen) {
     if (-not (Test-Path $srvLog) -or -not (Select-String -Path $srvLog -Pattern 'Done \(' -Quiet -ErrorAction SilentlyContinue)) {
         Write-Host '[e2e] server did not reach "Done", tail:'
         Get-Content $srvLog -Tail 20 -ErrorAction SilentlyContinue
-        if ($sniffer -and -not $sniffer.HasExited) { try { $sniffer.Kill() } catch { } }
         exit 1
     }
     Write-Host '[e2e] server ready'
 }
+
+# --- 2) protocol listener -------------------------------------------------
+$sniffLog = Join-Path $GameDir 'sniff-e2e.log'
+$sniffErr = Join-Path $GameDir 'sniff-e2e.err'
+Remove-Item $sniffLog, $sniffErr -ErrorAction SilentlyContinue
+$sniffer = Start-Process -FilePath $snifferJava `
+    -ArgumentList ('-cp "' + $harnessOut + '" UdpSniff ' + 25585 + ' ' + $ListenSeconds) `
+    -RedirectStandardOutput $sniffLog -RedirectStandardError $sniffErr -PassThru -WindowStyle Hidden
+Write-Host ('[e2e] listener pid=' + $sniffer.Id + ' for ' + $ListenSeconds + 's')
+Start-Sleep -Milliseconds 1200
 
 # --- 3) real client -------------------------------------------------------
 # Window PowerShell 5.1 mangles non-ASCII characters on its way to CreateProcess, and this
@@ -101,6 +120,10 @@ for ($i = 0; $i -lt $lines.Count; $i++) {
         continue
     }
     [void]$rewritten.Add($line)
+}
+if ($QuickPlay) {
+    [void]$rewritten.Add('--quickPlayMultiplayer')
+    [void]$rewritten.Add('127.0.0.1:' + $ServerPort)
 }
 $commandLine = ($rewritten.ToArray() -join ' ')
 
