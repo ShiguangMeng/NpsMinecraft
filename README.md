@@ -58,6 +58,21 @@
 制品命名统一为 `nps-minecraft-<模组版本>-<MC 版本>-<加载器>.jar`。**Minecraft 版本必须排在加载器之前**：PCL2 等启动器会向 ModLauncher 传
 `-DignoreList=...,forge-,...`，任何文件名含 `forge-` 的 jar 都会被静默排除 —— 旧的 `nps-minecraft-1.1.0-forge-1.20.1.jar` 在 PCL2 上根本不会加载。
 
+### 验证覆盖
+
+| 级别 | 覆盖 | 证据 |
+| --- | --- | --- |
+| 编译 → 重映射 → 打包 → LinkCheck → jar 自检 | **35 / 35** | `dist/build-report.json` |
+| 每个版本分支独立构建 | **13 / 13** | `dist/branch-report.json` |
+| 真实客户端进服/进世界并抓到协议报文 | Forge 1.20.1（SRG）、Fabric 26.1.2（mojmap） | `DI\|HELD` 报文 |
+| 仅静态校验 | 其余 11 个版本 | LinkCheck 成员引用全部可解析 |
+
+`LinkCheck` 会把产物里的每个 Minecraft 成员引用拿到该版本**运行时命名空间**中解析，能提前发现
+`NoSuchMethodError` / `NoClassDefFoundError`；但它不能替代真机启动，未启动客户端的版本仍可能
+在加载器层（事件注册、版本校验）出问题。
+
+Quilt 未做真机验证：它复用 Fabric 制品，依赖 QFAPI 提供 Fabric API 兼容层。
+
 ---
 
 ## 一、参考视频中的核心功能
