@@ -62,6 +62,14 @@ foreach ($l in $spec.libraries) {
     if ($l.PSObject.Properties['downloads'] -and $l.downloads -and $l.downloads.PSObject.Properties['artifact'] -and $l.downloads.artifact) {
         $artifactPath = $l.downloads.artifact.path
     }
+    if (-not $artifactPath -and $l.PSObject.Properties['name'] -and $l.name) {
+        # PCL2 writes the Fabric entries as group:artifact:version without a downloads
+        # block, so the Maven layout has to be rebuilt by hand.
+        $parts = $l.name.Split(':')
+        if ($parts.Count -ge 3) {
+            $artifactPath = Join-Path ($parts[0].Replace('.', '\')) (Join-Path $parts[1] (Join-Path $parts[2] ($parts[1] + '-' + $parts[2] + '.jar')))
+        }
+    }
     if (-not $artifactPath) { continue }
 
     $full = Join-Path $libRoot $artifactPath
@@ -106,6 +114,9 @@ $lines += '-Xmx2G'
 $lines += '-Djava.library.path=' + $nativesDir
 $lines += '-Djna.tmpdir=' + $nativesDir
 $lines += '-Dorg.lwjgl.system.SharedLibraryExtractPath=' + $nativesDir
+$tmpDir = Join-Path $GameDir 'tmp'
+New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null
+$lines += '-Djava.io.tmpdir=' + $tmpDir
 $lines += '-Dminecraft.launcher.brand=PCL2'
 $lines += '-Dminecraft.launcher.version=2'
 $lines += '-cp'
