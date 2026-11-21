@@ -62,29 +62,29 @@ internal sealed class IslandDetailPage : IDetailPage
         float alpha = frame.Alpha / 255f;
         float y = 20f;
 
-        DrawLine(canvas, "NPS · Minecraft", PadX, y, TitleSize, Ink.Pick(TitleColor, PadX / LayoutW, y / LayoutH), alpha);
+        DrawLine(canvas, frame, "NPS · Minecraft", PadX, y, TitleSize, TitleColor);
         y += 22f;
 
         var server = _server();
         int port = server?.BoundPort ?? -1;
         string listen = port > 0 ? $"127.0.0.1:{port}" : "未监听";
 
-        DrawDot(canvas, PadX + 3f, y - 3.5f, view.Linked ? OkColor : BadColor, alpha);
-        DrawLine(canvas,
+        DrawDot(canvas, frame, PadX + 3f, y - 3.5f, view.Linked ? OkColor : BadColor);
+        DrawLine(canvas, frame,
             view.Linked ? $"已连接 · {listen}" : $"等待游戏连接 · {listen}",
-            PadX + 12f, y, BodySize, Ink.Pick(BodyColor, PadX / LayoutW, y / LayoutH), alpha);
+            PadX + 12f, y, BodySize, BodyColor);
         y += 20f;
 
-        DrawLine(canvas, DescribeContent(view), PadX, y, BodySize, Ink.Pick(BodyColor, PadX / LayoutW, y / LayoutH), alpha);
+        DrawLine(canvas, frame, DescribeContent(view), PadX, y, BodySize, BodyColor);
         y += 20f;
 
-        DrawLine(canvas, $"已接收报文 {_snapshot.PacketCount} 条", PadX, y, BodySize, Ink.Pick(BodyColor, PadX / LayoutW, y / LayoutH), alpha);
+        DrawLine(canvas, frame, $"已接收报文 {_snapshot.PacketCount} 条", PadX, y, BodySize, BodyColor);
         y += 22f;
 
         string hint = view.Linked
             ? "游戏内挖掘、放置方块或滚轮换物品都会同步到这里。"
             : "请确认 Fabric 模组已安装并已进入世界。";
-        DrawLine(canvas, hint, PadX, y, BodySize, Ink.Pick(HintColor, PadX / LayoutW, y / LayoutH), alpha);
+        DrawLine(canvas, frame, hint, PadX, y, BodySize, HintColor, sub: true);
 
         canvas.Restore();
     }
@@ -104,25 +104,28 @@ internal sealed class IslandDetailPage : IDetailPage
             : $"当前无活动 · 手持 {(string.IsNullOrWhiteSpace(view.Label) ? "物品" : view.Label)}",
     };
 
-    private static void DrawLine(SKCanvas canvas, string text, float x, float baseline,
-                                 float size, SKColor color, float alpha)
+    private static void DrawLine(SKCanvas canvas, WidgetFrame frame, string text, float x, float baseline,
+                                 float size, SKColor color, bool sub = false)
     {
         using var paint = new SKPaint
         {
             IsAntialias = true,
             TextSize = size,
             Typeface = PluginFont.Resolve(),
-            Color = color.WithAlpha((byte)(color.Alpha * alpha)),
+            Color = color,
         };
-        canvas.DrawText(text, x, baseline, paint);
+        // 逐元素判黑白：文字按自己的包围盒取身后的底色（PluginTone）
+        PluginTone.DrawText(canvas, frame.Theme, text, x, baseline, paint, sub, frame.Alpha);
     }
 
-    private static void DrawDot(SKCanvas canvas, float cx, float cy, SKColor color, float alpha)
+    private static void DrawDot(SKCanvas canvas, WidgetFrame frame, float cx, float cy, SKColor color)
     {
+        var area = new SKRect(cx - 3.5f, cy - 3.5f, cx + 3.5f, cy + 3.5f);
         using var paint = new SKPaint
         {
             IsAntialias = true,
-            Color = color.WithAlpha((byte)(color.Alpha * alpha)),
+            // 状态点保留语义色（绿 / 红），只在对比度不够时压暗或提亮
+            Color = PluginTone.AccentColor(canvas, area, color).WithAlpha(frame.Alpha),
         };
         canvas.DrawCircle(cx, cy, 3.5f, paint);
     }

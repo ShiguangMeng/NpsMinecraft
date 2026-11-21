@@ -13,7 +13,7 @@
     <RootNamespace>NpsDynamicIsland</RootNamespace>
 
     <!-- 版本号唯一真源：入口类的 Version 读 AssemblyInformationalVersion，不另写第二份 -->
-    <Version>1.1.1</Version>
+    <Version>1.1.2</Version>
 
     <Authors>拾光梦</Authors>
     <Company>拾光梦</Company>

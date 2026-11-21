@@ -10,8 +10,23 @@ NpsDynamicIsland/dist/
 NpsDynamicIsland/tests/SelfTest/bin/
 NpsDynamicIsland/tests/SelfTest/obj/
 
+# 跨版本矩阵的中间产物与校验工具输出
+mod/build/
+mod/tools/out/
+mod/tools/remap/out/
+tools/runtime/out/
+
 # 二进制只随 GitHub Release 分发，仓库里不放产物
 /dist/
+/NpsMinecraft.dll
+/nps-minecraft-*.jar
+/fabric-api-*.jar
+
+# 本地客户端验证日志
+/logs/
+
+# 移交包导出目录（本地产物，不入库）
+/export/
 
 # ── 本地工具与临时文件 ─────────────────────────────────────
 .workbuddy/

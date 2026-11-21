@@ -238,35 +238,30 @@ internal sealed class IslandWidget : IAutoWidthWidget
 
         if (view.Phase == IslandPhase.Mining)
         {
-            DrawRing(canvas, PadX, boxTop, IconBox, view.Progress, alpha);
+            DrawRing(canvas, frame, PadX, boxTop, IconBox, view.Progress, alpha);
         }
 
         float x = PadX + IconBox + Gap;
         float baseline = cy + TextSize * 0.36f + frame.TextOffsetY;
-
-        // 文字按自己所在的底色取色：浅色壁纸 / 浅色窗口下自动转深字，深色下保持浅字
-        float inkNx = width > 1f ? Math.Clamp((x + 36f) / width, 0f, 1f) : 0.5f;
-        var textInk = Ink.Pick(RingFill, inkNx, 0.5f);
-        var mutedInk = Ink.Pick(MutedText, inkNx, 0.5f);
 
         switch (view.Phase)
         {
             case IslandPhase.Mining:
             {
                 // 方块名一个字都画不出来时（整名缺字）不留 LabelGap，与 Layout 的盒子一致
-                float labelWidth = DrawText(canvas, view.Label, x, baseline, textInk, alpha, LabelBudget, face);
+                float labelWidth = DrawText(canvas, frame, view.Label, x, baseline, false, alpha, LabelBudget, face);
                 if (labelWidth > 0f) x += labelWidth + LabelGap;
-                DrawText(canvas, Percent(view.Progress), x, baseline, textInk, alpha, null, face);
+                DrawText(canvas, frame, Percent(view.Progress), x, baseline, false, alpha, null, face);
                 break;
             }
 
             case IslandPhase.Placed:
-                DrawText(canvas, PlacedText(view), x, baseline, textInk, alpha, LabelBudget, face);
+                DrawText(canvas, frame, PlacedText(view), x, baseline, false, alpha, LabelBudget, face);
                 break;
 
             case IslandPhase.Slot:
-                x += DrawText(canvas, SlotText(view), x, baseline, textInk, alpha, LabelBudget, face) + Gap;
-                DrawDurability(canvas, x, cy, baseline, view, alpha, face);
+                x += DrawText(canvas, frame, SlotText(view), x, baseline, false, alpha, LabelBudget, face) + Gap;
+                DrawDurability(canvas, frame, x, cy, baseline, view, alpha, face);
                 break;
 
             default:
@@ -276,27 +271,30 @@ internal sealed class IslandWidget : IAutoWidthWidget
     }
 
     /// <summary>环形进度条：底环铺满一周，进度弧从正上方顺时针推进。</summary>
-    private static void DrawRing(SKCanvas canvas, float x, float y, float size, float progress, float alpha)
+    private static void DrawRing(SKCanvas canvas, WidgetFrame frame, float x, float y, float size,
+                                 float progress, float alpha)
     {
         var paint = GeometryPaint();
         float inset = RingStroke * 0.5f;
         var rect = new SKRect(x + inset, y + inset, x + size - inset, y + size - inset);
+        var ring = new SKRect(x, y, x + size, y + size);
 
         paint.Style = SKPaintStyle.Stroke;
         paint.StrokeWidth = RingStroke;
         paint.StrokeCap = SKStrokeCap.Round;
-        paint.Color = RingTrack.WithAlpha((byte)(RingTrack.Alpha * alpha));
+        // 环压在玻璃上：底环与进度弧都按环自己下方的亮度取黑白（PluginTone）
+        paint.Color = PluginTone.ColorFor(canvas, ring, RingTrack).WithAlpha((byte)(RingTrack.Alpha * alpha));
         canvas.DrawArc(rect, 0f, 360f, false, paint);
 
         float sweep = Math.Clamp(progress, 0f, 1f) * 360f;
         if (sweep < 1f) return;
 
-        paint.Color = RingFill.WithAlpha((byte)(RingFill.Alpha * alpha));
+        paint.Color = PluginTone.ColorFor(canvas, ring, RingFill).WithAlpha((byte)(RingFill.Alpha * alpha));
         canvas.DrawArc(rect, -90f, sweep, false, paint);
     }
 
     /// <summary>耐久条 + 剩余值。剩余低于两成时条变告警色。</summary>
-    private static void DrawDurability(SKCanvas canvas, float x, float cy, float baseline,
+    private static void DrawDurability(SKCanvas canvas, WidgetFrame frame, float x, float cy, float baseline,
                                        IslandView view, float alpha, SKTypeface? face)
     {
         if (view.MaxDurability <= 0) return;
@@ -304,23 +302,26 @@ internal sealed class IslandWidget : IAutoWidthWidget
         float ratio = Math.Clamp(view.Durability / (float)view.MaxDurability, 0f, 1f);
         float barTop = cy - DuraBarHeight * 0.5f;
         float radius = DuraBarHeight * 0.5f;
+        var trackRect = new SKRect(x, barTop, x + DuraBarWidth, barTop + DuraBarHeight);
 
         var paint = GeometryPaint();
         paint.Style = SKPaintStyle.Fill;
-        paint.Color = BarTrack.WithAlpha((byte)(BarTrack.Alpha * alpha));
-        canvas.DrawRoundRect(new SKRect(x, barTop, x + DuraBarWidth, barTop + DuraBarHeight), radius, radius, paint);
+        paint.Color = PluginTone.ColorFor(canvas, trackRect, BarTrack).WithAlpha((byte)(BarTrack.Alpha * alpha));
+        canvas.DrawRoundRect(trackRect, radius, radius, paint);
 
         float filled = DuraBarWidth * ratio;
         if (filled >= 1f)
         {
-            var color = ratio <= 0.2f ? BarLow : BarFill;
-            paint.Color = color.WithAlpha((byte)(color.Alpha * alpha));
-            canvas.DrawRoundRect(new SKRect(x, barTop, x + filled, barTop + DuraBarHeight), radius, radius, paint);
+            var fillRect = new SKRect(x, barTop, x + filled, barTop + DuraBarHeight);
+            // 低耐久是语义色（告警红）：保留色相，只在对比度不够时修正
+            paint.Color = ratio <= 0.2f
+                ? PluginTone.AccentColor(canvas, fillRect, BarLow).WithAlpha((byte)(BarLow.Alpha * alpha))
+                : PluginTone.ColorFor(canvas, fillRect, BarFill).WithAlpha((byte)(BarFill.Alpha * alpha));
+            canvas.DrawRoundRect(fillRect, radius, radius, paint);
         }
 
-        DrawText(canvas, $"{view.Durability}/{view.MaxDurability}",
-                 x + DuraBarWidth + LabelGap, baseline,
-                 Ink.Pick(MutedText, 0.75f, 0.5f), alpha, null, face);
+        DrawText(canvas, frame, $"{view.Durability}/{view.MaxDurability}",
+                 x + DuraBarWidth + LabelGap, baseline, true, alpha, null, face);
     }
 
     private static void DrawBitmap(SKCanvas canvas, SKBitmap? bitmap, float x, float y, float size,
@@ -343,19 +344,22 @@ internal sealed class IslandWidget : IAutoWidthWidget
     /// <p>绘制前会剔除当前字体画不出的字符 —— 缺字在 Skia 里会渲染成豆腐块，
     /// 而物品名里出现生僻字或特殊符号是常事。缺少的字符直接不占位。</p>
     /// </summary>
-    private static float DrawText(SKCanvas canvas, string text, float x, float baseline,
-                                  SKColor color, float alpha, float? maxWidth, SKTypeface? face)
+    private static float DrawText(SKCanvas canvas, WidgetFrame frame, string text, float x, float baseline,
+                                  bool sub, float alpha, float? maxWidth, SKTypeface? face)
     {
         if (string.IsNullOrEmpty(text)) return 0f;
 
         var paint = TextPaint(face);
-        paint.Color = color.WithAlpha((byte)(color.Alpha * alpha));
 
         string shown = FitText(paint, text, maxWidth);
         if (shown.Length == 0) return 0f;
 
+        byte a = (byte)Math.Clamp(255f * alpha, 0f, 255f);
+        paint.Color = (sub ? frame.Theme.SubTextColor : frame.Theme.TextColor).WithAlpha(a);
+
         float width = paint.MeasureText(shown);
-        canvas.DrawText(shown, x, baseline, paint);
+        // 逐元素判黑白：文字按自己的包围盒取身后的底色（PluginTone）
+        PluginTone.DrawText(canvas, frame.Theme, shown, x, baseline, paint, sub, a);
         return width;
     }
 
