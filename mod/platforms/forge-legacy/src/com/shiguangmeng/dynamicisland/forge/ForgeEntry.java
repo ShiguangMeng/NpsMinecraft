@@ -8,6 +8,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -34,7 +35,7 @@ public final class ForgeEntry {
         CompatBootstrap.install();
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
         modBus.addListener(this::onClientSetup);
-        MinecraftForge.EVENT_BUS.addListener(this::onClientTick);
+        MinecraftForge.EVENT_BUS.register(this);
     }
 
     private void onClientSetup(FMLClientSetupEvent event) {
@@ -43,7 +44,8 @@ public final class ForgeEntry {
         IslandCore.init(announce);
     }
 
-    private void onClientTick(TickEvent.ClientTickEvent event) {
+    @SubscribeEvent
+    public void onClientTick(TickEvent.ClientTickEvent event) {
         // 1.16.5 / 1.18.2 的 ClientTickEvent 每 tick 只来一次，没有 Pre/Post 之分；
         // 仍然查 phase 是为了让同一份源码在 1.20.4+ 上也不会重复处理。
         if (event.phase != TickEvent.Phase.END) {

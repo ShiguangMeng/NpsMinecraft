@@ -75,7 +75,10 @@ public final class IslandCore {
             }
             return;
         }
-        inWorld = true;
+        if (!inWorld) {
+            inWorld = true;
+            log.info("[DynamicIsland] 已进入世界，开始上报状态");
+        }
         MiningTracker.tick(client);
         PlacementTracker.tick(client);
         SlotTracker.tick(client);

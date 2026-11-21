@@ -11,6 +11,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.GameShuttingDownEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -33,8 +34,7 @@ public final class ForgeEntry {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
         modBus.addListener(this::onRegisterKeys);
         modBus.addListener(this::onClientSetup);
-        MinecraftForge.EVENT_BUS.addListener(this::onClientTick);
-        MinecraftForge.EVENT_BUS.addListener(this::onShutdown);
+        MinecraftForge.EVENT_BUS.register(this);
     }
 
     private void onRegisterKeys(RegisterKeyMappingsEvent event) {
@@ -46,7 +46,8 @@ public final class ForgeEntry {
         IslandCore.init(announceKey);
     }
 
-    private void onClientTick(TickEvent.ClientTickEvent event) {
+    @SubscribeEvent
+    public void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) {
             return;
         }
@@ -57,7 +58,8 @@ public final class ForgeEntry {
         IslandCore.tick(client);
     }
 
-    private void onShutdown(GameShuttingDownEvent event) {
+    @SubscribeEvent
+    public void onShutdown(GameShuttingDownEvent event) {
         IslandCore.shutdown();
     }
 }
