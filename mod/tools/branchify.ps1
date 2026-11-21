@@ -29,15 +29,19 @@ $utf8 = New-Object System.Text.UTF8Encoding($false)
 function Resolve-Git {
     $command = Get-Command git -ErrorAction SilentlyContinue
     if ($command) { return $command.Source }
+
     $candidates = @(
+        $env:NPS_GIT,
         (Join-Path $env:LOCALAPPDATA 'Programs\WorkBuddy\resources\vendor\PortableGit\mingw64\bin\git.exe'),
         (Join-Path $env:LOCALAPPDATA 'Programs\WorkBuddy\resources\vendor\PortableGit\cmd\git.exe'),
-        'C:\Program Files\Git\cmd\git.exe'
+        ('D:\Users\' + $env:USERNAME + '\AppData\Local\Programs\WorkBuddy\resources\vendor\PortableGit\mingw64\bin\git.exe'),
+        'C:\Program Files\Git\cmd\git.exe',
+        'C:\Program Files (x86)\Git\cmd\git.exe'
     )
     foreach ($path in $candidates) {
         if ($path -and (Test-Path $path)) { return $path }
     }
-    throw 'git not found; add it to PATH or install Git for Windows'
+    throw 'git not found; set NPS_GIT to git.exe or add Git to PATH'
 }
 
 $git = Resolve-Git
