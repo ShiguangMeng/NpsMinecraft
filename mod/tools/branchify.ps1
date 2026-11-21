@@ -66,7 +66,7 @@ function New-LoaderTable {
 
     $rows = @()
     if ($Fabric) {
-        $rows += '| Fabric | Loader ' + $script:FabricInfo[$Version].Loader + '，Fabric API `' + $script:FabricApi[$Version].KeyModule + '` | `' + $base + '-fabric.jar` |'
+        $rows += '| Fabric | Loader ' + $script:FabricInfo[$Version].Loader + ', Fabric API `' + $script:FabricApi[$Version].KeyModule + '` | `' + $base + '-fabric.jar` |'
     }
     if ($Forge) {
         $rows += '| Forge | ' + $script:ForgeInfo[$Version].Univ + ' | `' + $base + '-forge.jar` |'

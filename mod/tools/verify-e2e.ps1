@@ -20,7 +20,9 @@ param(
     [int]$ClientSeconds = 150,
     [int]$ServerTimeoutSeconds = 300,
     [string]$JavaHome = '',
-    [switch]$QuickPlay
+    [switch]$QuickPlay,
+    [switch]$NoServer,
+    [string]$QuickPlaySingleplayer = ''
 )
 
 Set-StrictMode -Version Latest
@@ -50,6 +52,8 @@ $harnessOut = Join-Path $script:RepoRoot 'tools\runtime\out'
 New-Item -ItemType Directory -Force -Path $GameDir | Out-Null
 
 
+$server = $null
+if (-not $NoServer) {
 # --- 1) dedicated server --------------------------------------------------
 $srvLog = Join-Path $GameDir 'server-e2e.log'
 $srvErr = Join-Path $GameDir 'server-e2e.err'
@@ -93,6 +97,8 @@ if ($portOpen) {
     Write-Host '[e2e] server ready'
 }
 
+}
+
 # --- 2) protocol listener -------------------------------------------------
 $sniffLog = Join-Path $GameDir 'sniff-e2e.log'
 $sniffErr = Join-Path $GameDir 'sniff-e2e.err'
@@ -124,6 +130,10 @@ for ($i = 0; $i -lt $lines.Count; $i++) {
 if ($QuickPlay) {
     [void]$rewritten.Add('--quickPlayMultiplayer')
     [void]$rewritten.Add('127.0.0.1:' + $ServerPort)
+}
+if ($QuickPlaySingleplayer) {
+    [void]$rewritten.Add('--quickPlaySingleplayer')
+    [void]$rewritten.Add($QuickPlaySingleplayer)
 }
 $commandLine = ($rewritten.ToArray() -join ' ')
 
