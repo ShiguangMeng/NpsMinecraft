@@ -25,6 +25,23 @@ $ErrorActionPreference = 'Stop'
 
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 
+# The desktop app ships its own PortableGit and does not always add it to PATH.
+function Resolve-Git {
+    $command = Get-Command git -ErrorAction SilentlyContinue
+    if ($command) { return $command.Source }
+    $candidates = @(
+        (Join-Path $env:LOCALAPPDATA 'Programs\WorkBuddy\resources\vendor\PortableGit\mingw64\bin\git.exe'),
+        (Join-Path $env:LOCALAPPDATA 'Programs\WorkBuddy\resources\vendor\PortableGit\cmd\git.exe'),
+        'C:\Program Files\Git\cmd\git.exe'
+    )
+    foreach ($path in $candidates) {
+        if ($path -and (Test-Path $path)) { return $path }
+    }
+    throw 'git not found; add it to PATH or install Git for Windows'
+}
+
+$git = Resolve-Git
+
 function Set-PinnedList {
     param([string]$Text, [string]$Name, [string]$Value)
 
