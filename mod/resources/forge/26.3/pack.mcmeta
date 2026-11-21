@@ -1,9 +1,0 @@
-{
-  "pack": {
-    "description": {
-      "translate": "pack.forge.description"
-    },
-    "max_format": 121,
-    "min_format": 121
-  }
-}
